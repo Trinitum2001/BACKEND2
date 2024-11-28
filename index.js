@@ -40,6 +40,10 @@ app.get('/api/notes/:id', (req, res) => {
             res.status(404).end();
         }
     })
+    .catch(error => {
+        console.log(error);
+        response.status(400).send({error: 'malfomated id'})
+    })
 })
 
 
