@@ -72,27 +72,16 @@ app.post('/api/notes', (req, res) => {
 })
 
 app.put('/api/notes/:id', (req, res) => {
-    const id = Number(req.params.id);
     const body = req.body;
-
-    const note = notes.find(n => n.id === id);
-    if (!note) {
-        return res.status(404).json({ error: 'note not found' });
-    }
-
-    const updatedNote = {
-        ...note,
+    const note = {
+        content: body.content,
         important: body.important
-    };
-
-    notes = notes.map(n => n.id !== id ? n : updatedNote);
-    res.json(updatedNote);
-});
-
-app.put('/api/notes/:id', (req, res) => {
-    const id = Number(req.params.id);
-    notes = notes.filter(n => n.id !== id);
-    res.status(204).end();
+    }
+    Note.findByIdAndUpdate(req.params.id, note, {new: true})
+    .then(result => {
+        res.json(result);
+    })
+    .catch(error => { next(error) })
 })
 
 
