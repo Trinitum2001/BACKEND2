@@ -2,11 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const Note = require('./models/note')
+const Note = require('./models/note');
 
-
-app.use(express.json());
-app.use(cors());
+app.use(express.json(), cors());
 app.use(express.static('dist'));
 
 const requestLogger = (req, res, next) => {
@@ -21,48 +19,41 @@ app.use(requestLogger);
 
 let notes = [];
 
-app.get('/', (request, response) => {
-    response.send('<h1>API REST FROM NOTES</h1>');
+app.get('/', (req, res) => {
+    res.send('<h1>API REST FROM NOTES</h1>');
 });
 
-app.get('/api/notes', (request, response) => {
+app.get('/api/notes', (req, res) => {
     Note.find({}).then((notes) => {
-        response.json(notes);
+        res.json(notes);
     });
 });
 
-app.get('/api/notes/:id', (request, response) => {
-    const id = Number(request.params.id);
-    console.log('id:', id);
+app.get('/api/notes/:id', (req, res) => {
+    const id = Number(req.params.id);
     const note = notes.find((n) => n.id === id);
-    console.log(note);
     if (note) {
-        response.json(note);
+        res.json(note);
     } else {
-        response.status(404).end();
+        res.status(404).end();
     }
 });
 
-app.delete('/api/notes/:id', (request, response) => {
-    const id = Number(request.params.id);
-    console.log('Delete id:', id);
+app.delete('/api/notes/:id', (req, res) => {
+    const id = Number(req.params.id);
     notes = notes.filter((n) => n.id !== id);
-    response.status(204).end();
+    res.status(204).end();
 });
 
 const generateId = () => {
-    const maxId = notes.length > 0
-        ? Math.max(...notes.map((n) => n.id))
-        : 0;
+    const maxId = notes.length > 0 ? Math.max(...notes.map((n) => n.id)) : 0;
     return maxId + 1;
 };
 
-app.post('/api/notes', (request, response) => {
-    const body = request.body;
+app.post('/api/notes', (req, res) => {
+    const body = req.body;
     if (!body.content) {
-        return response.status(400).json({
-            error: 'content missing',
-        });
+        return res.status(400).json({ error: 'content missing' });
     }
     const note = {
         id: generateId(),
@@ -70,20 +61,29 @@ app.post('/api/notes', (request, response) => {
         important: Boolean(body.important) || false,
     };
     notes = notes.concat(note);
-    response.json(note);
+    res.json(note);
 });
 
-app.put('/api/notes/:id', (request, response) => {
-    const id = Number(request.params.id);
-    const body = request.body;
+app.put('/api/notes/:id', (req, res) => {
+    const id = Number(req.params.id);
+    const body = req.body;
+
     const note = notes.find((n) => n.id === id);
-    if (!note) return response.status(404).end();
-    const updateNote = { ...note, important: body.important };
-    notes = notes.map((n) => (n.id !== id ? n : updateNote));
-    response.json(updateNote);
+    if (!note) {
+        return res.status(404).json({ error: 'note not found' });
+    }
+
+    const updatedNote = {
+        ...note,
+        important: body.important,
+    };
+
+    notes = notes.map((n) => (n.id !== id ? n : updatedNote));
+    res.json(updatedNote);
 });
 
-const PORT = process.env.PORT
-app.listen(PORT, () => {
-    console.log('Server express running on port ' + PORT);
+const port = process.env.PORT;
+
+app.listen(port, () => {
+    console.log('Server running on port ' + port);
 });
